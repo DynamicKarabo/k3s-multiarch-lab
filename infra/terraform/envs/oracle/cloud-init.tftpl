@@ -1,0 +1,78 @@
+#cloud-config
+package_update: true
+package_upgrade: false
+
+packages:
+  - curl
+  - ca-certificates
+  - gnupg
+  - iptables-persistent
+
+swap:
+  filename: /swapfile
+  size: 0
+
+bootcmd:
+  - modprobe overlay
+  - modprobe br_netfilter
+
+write_files:
+  - path: /etc/sysctl.d/99-kubernetes.conf
+    content: |
+      net.ipv4.ip_forward = 1
+      net.bridge.bridge-nf-call-iptables = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+    permissions: '0644'
+
+  - path: /opt/k3s-bootstrap.sh
+    content: |
+      #!/bin/bash
+      set -euo pipefail
+
+      K3S_VERSION=${k3s_version}
+      K3S_TOKEN=***      K3S_URL=${k3s_server_url}
+      TAILSCALE_AUTH=${tail...h}
+      NODE_HOSTNAME=${node_hostname}
+      FLANNEL_IFACE=${flannel_iface}
+
+      # ── Step 1: Install and authenticate Tailscale (if key provided) ──
+      TS_IP=""
+      if [ -n "$TAILSCALE_AUTH" ]; then
+        curl -fsSL https://tailscale.com/install.sh | sh
+        tailscale up \
+          --authkey="$TAILSCALE_AUTH" \
+          --hostname="$NODE_HOSTNAME" \
+          --accept-routes \
+          --accept-dns=false
+        TS_IP=$(tailscale ip -4 2>/dev/null || echo "")
+      fi
+
+      # ── Step 2: Build K3s install args ──
+      K3S_ARGS="agent \
+        --node-label=node-type=arm64 \
+        --kubelet-arg=node-status-update-frequency=30s"
+
+      if [ -n "$TS_IP" ]; then
+        K3S_ARGS="$K3S_ARGS \
+          --node-ip=$TS_IP \
+          --flannel-iface=$FLANNEL_IFACE \
+          --kubelet-arg=address=$TS_IP"
+      fi
+
+      # ── Step 3: Single K3s agent install ──
+      curl -sfL https://get.k3s.io | \
+        INSTALL_K3S_VERSION="$K3S_VERSION" \
+        K3S_URL="$K3S_URL" \
+        K3S_TOKEN=*** \
+        INSTALL_K3S_EXEC="$K3S_ARGS" \
+        sh -
+    permissions: '0744'
+
+runcmd:
+  - sysctl --system
+  # Remove OCI default reject rules (conflict with security lists)
+  - iptables -D INPUT -j REJECT --reject-with icmp-host-prohibited 2>/dev/null || true
+  - iptables -D FORWARD -j REJECT --reject-with icmp-host-prohibited 2>/dev/null || true
+  - netfilter-persistent save
+  - hostnamectl set-hostname ${node_hostname}
+  - /opt/k3s-bootstrap.sh

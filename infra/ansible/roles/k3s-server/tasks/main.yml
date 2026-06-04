@@ -15,12 +15,13 @@
         --node-ip={{ tailscale_ip }} \
         --flannel-iface={{ flannel_iface }} \
         --kubelet-arg=node-status-update-frequency={{ kubelet_node_status_update_frequency }} \
+        --kubelet-arg=address={{ tailscale_ip }} \
         --kube-controller-manager-arg=node-monitor-grace-period={{ kubelet_node_monitor_grace_period }} \
+        --advertise-address={{ tailscale_ip }} \
         --disable=traefik \
-        --write-kubeconfig-mode=644 \
+        --write-kubeconfig-mode=600 \
         --cluster-cidr=10.42.0.0/16 \
-        --service-cidr=10.43.0.0/16 \
-        --disable-network-policy" \
+        --service-cidr=10.43.0.0/16" \
       sh -
   args:
     warn: false
@@ -59,12 +60,14 @@
       sh -
   when: k3s_provision | default(false)
 
-- name: Open UFW ports for K3s server
+- name: Open UFW ports for K3s server (Tailscale-only)
   ufw:
     rule: allow
-    port: "{{ item }}"
-    proto: tcp
+    port: "{{ item.port }}"
+    proto: "{{ item.proto }}"
+    src: "100.64.0.0/10"
   loop:
-    - 6443   # Kubernetes API
-    - 10250  # Kubelet
+    - { port: 6443, proto: tcp }   # Kubernetes API
+    - { port: 10250, proto: tcp }  # Kubelet
+    - { port: 8472, proto: udp }   # Flannel VXLAN
   when: sysctl_tuning | default(false)

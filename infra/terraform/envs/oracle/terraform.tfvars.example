@@ -1,0 +1,26 @@
+# ── Oracle Terraform Variables ──
+# Copy to terraform.tfvars and fill in
+#   cp terraform.tfvars.example terraform.tfvars
+
+# OCI
+compartment_id   = "ocid1.tenancy.oc1..aaaaaaaa2oo5wurzo7ib246x7rnnyvlzjjntb4qiqyjbainr5maxbogjkc4q"
+region           = "af-johannesburg-1"
+availability_domain = "WmRs:AF-JOHANNESBURG-1-AD-1"
+
+# SSH
+ssh_public_key   = "ssh-ed25519 AAAAC3... your-public-key"
+
+# K3s cluster (get these after setting up Hetzner server)
+k3s_token        = "your-k3s-cluster-token"
+k3s_server_url   = "https://<TAILSCALE-IP-OF-HETZNER>:6443"
+
+# Tailscale (optional — set empty string to skip)
+tailscale_auth_key = "tskey-auth-..."
+
+# Hetzner VPS IP (for security list restriction)
+server_public_ip = "178.105.76.236"
+
+# Instance
+instance_ocpus     = 4
+instance_memory_gb = 24
+block_volume_size_gb = 50

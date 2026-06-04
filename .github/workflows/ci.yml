@@ -1,0 +1,74 @@
+name: CI Lint & Validate
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  lint:
+    name: Lint & Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.10.x
+
+      - name: Terraform fmt
+        run: terraform fmt -recursive -check
+        working-directory: infra/terraform
+
+      - name: Terraform validate
+        run: |
+          for dir in envs/*/; do
+            echo "Validating $dir..."
+            cd $dir
+            terraform init -backend=false > /dev/null 2>&1
+            terraform validate
+            cd ../..
+          done
+        working-directory: infra/terraform
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: TFLint (Terraform security lint)
+        run: tflint --recursive --format compact
+        working-directory: infra/terraform
+        continue-on-error: true  # advisory until rules configured
+
+      - name: Checkov (IaC security scan)
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: infra/
+          framework: terraform
+          soft_fail: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ansible-lint
+        run: pip install ansible-lint yamllint
+
+      - name: Ansible syntax check
+        run: ansible-playbook site.yml --syntax-check
+        working-directory: infra/ansible
+
+      - name: Ansible-lint
+        run: ansible-lint
+        working-directory: infra/ansible
+        continue-on-error: true
+
+      - name: YAML lint
+        run: yamllint --no-warnings .
+        continue-on-error: true
+
+      - name: Verify committed files are clean
+        run: git diff --stat --exit-code || echo "⚠️ Uncommitted changes detected"

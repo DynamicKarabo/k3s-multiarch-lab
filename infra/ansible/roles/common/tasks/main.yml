@@ -34,6 +34,7 @@
     value: "{{ item.value }}"
     state: present
     reload: true
+  loop: "{{ sysctl_params | dict2items }}"
   when: sysctl_tuning | default(false)
   vars:
     sysctl_params:
