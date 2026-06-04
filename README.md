@@ -42,7 +42,7 @@ Most Kubernetes portfolios show the same "deploy a web app" pattern. This one de
 
 | Node | Host | Arch | Role | Spec | Cost |
 |------|------|------|------|------|------|
-| `hetzner-vps` | Hetzner (Falkenstein, DE) | `amd64` | Server + Worker | 4 vCPU, 8GB RAM | ~€9/mo |
+| `hermes` | Hetzner (Falkenstein, DE) | `amd64` | Server + Worker | 4 vCPU, 8GB RAM | ~€9/mo |
 | `oracle-arm` | Oracle (Johannesburg, ZA) | `arm64` | Agent (Worker) | 4 OCPU, 24GB RAM | Free |
 | `local-dev` | Your machine (Pop!_OS) | `amd64` | k3d (3 nodes) | shared host resources | $0 |
 
