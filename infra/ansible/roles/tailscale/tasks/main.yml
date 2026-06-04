@@ -7,11 +7,18 @@
   changed_when: false
   failed_when: false
 
+- name: Check if Tailscale is already logged in
+  command: tailscale status
+  register: tailscale_status
+  changed_when: false
+  failed_when: false
+  when: tailscale_installed.rc == 0
+
 - name: Install Tailscale (official script)
   shell: |
     curl -fsSL https://tailscale.com/install.sh | sh
   args:
-    warn: false
+    creates: /usr/local/bin/tailscale
   when: tailscale_installed.rc != 0
 
 - name: Authenticate and start Tailscale
@@ -23,7 +30,7 @@
       --accept-dns=false
   when:
     - tailscale_auth_key | length > 0
-    - tailscale_installed.rc != 0 or tailscale_status.changed
+    - tailscale_status is not defined or tailscale_status.failed
 
 - name: Get Tailscale IP
   command: tailscale ip -4

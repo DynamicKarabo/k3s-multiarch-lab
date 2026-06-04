@@ -26,7 +26,6 @@
         --kubelet-arg=address={{ tailscale_ip }}" \
       sh -
   args:
-    warn: false
     creates: /usr/local/bin/k3s
   when: k3s_installed.rc != 0
 
