@@ -1,0 +1,52 @@
+---
+# ── K3s Multi-Arch Cluster: Main Playbook ──
+# Targets: local (k3d) or prod (Hetzner + Oracle)
+# Usage:
+#   Local:  ansible-playbook site.yml -i inventories/local/
+#   Prod:   ansible-playbook site.yml -i inventories/prod/
+
+- name: Apply common configuration to all nodes
+  hosts: all
+  gather_facts: true
+  become: true
+  roles:
+    - role: common
+      when: env_type == "prod"  # k3d nodes use host kernel
+
+- name: Install Tailscale on all nodes
+  hosts: all
+  become: true
+  roles:
+    - role: tailscale
+      when:
+        - tailscale_enabled | default(false)
+        - env_type == "prod"
+
+- name: Install K3s server (control plane)
+  hosts: k3s_server
+  become: true
+  roles:
+    - role: k3s-server
+      when: k3s_provision | default(false)
+
+- name: Install K3s agents (worker nodes)
+  hosts: k3s_agent
+  become: true
+  vars:
+    k3s_token: "{{ hostvars[groups['k3s_server'][0]]['k3s_token'] }}"
+  roles:
+    - role: k3s-agent
+      when: k3s_provision | default(false)
+
+- name: Verify cluster health
+  hosts: k3s_server
+  become: true
+  tasks:
+    - name: Get node status
+      command: k3s kubectl get nodes -o wide
+      register: node_status
+      changed_when: false
+
+    - name: Display cluster nodes
+      debug:
+        var: node_status.stdout_lines

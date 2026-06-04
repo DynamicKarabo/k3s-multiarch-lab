@@ -1,0 +1,22 @@
+# ── Prod overlay ──
+# Production cluster uses proper Ingress with TLS.
+# Multi-arch nodeSelector and topology spread constraints.
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+namespace: k3s-lab
+
+patches:
+  - target:
+      kind: Deployment
+    patch: |
+      - op: add
+        path: /spec/template/spec/topologySpreadConstraints
+        value:
+          - maxSkew: 1
+            topologyKey: kubernetes.io/hostname
+            whenUnsatisfiable: DoNotSchedule

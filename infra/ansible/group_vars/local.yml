@@ -1,0 +1,14 @@
+---
+# ── Local (k3d / libvirt) environment ──
+
+# k3d doesn't need K3s installation — it's baked into the container
+k3s_provision: false
+
+# Tailscale is optional for local dev
+tailscale_enabled: false
+
+# Use NodePort for local access
+ingress_type: NodePort
+
+# K3d nodes don't need sysctl tuning (shared host kernel)
+sysctl_tuning: false

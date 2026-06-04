@@ -1,0 +1,28 @@
+# Terraform
+terraform/
+*.tfstate
+*.tfstate.backup
+*.tfplan
+.terraform.lock.hcl
+crash.log
+
+# Ansible
+*.retry
+ansible/inventories/prod/host_vars/
+ansible/**/__pycache__/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets (keep these out!)
+**/terraform.tfvars
+**/.env
+**/*.pem
+**/*.key

@@ -1,0 +1,76 @@
+---
+# ── Common node preparation ──
+
+- name: Set hostname
+  hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Disable swap (Kubernetes requirement)
+  mount:
+    name: swap
+    fstype: swap
+    state: absent
+  when: sysctl_tuning | default(false)
+
+- name: Disable swap in fstab
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*\sswap\s.*)$'
+    replace: '# \1'
+  when: sysctl_tuning | default(false)
+
+- name: Load kernel modules
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - overlay
+    - br_netfilter
+  when: sysctl_tuning | default(false)
+
+- name: Configure sysctl for Kubernetes
+  sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: true
+  when: sysctl_tuning | default(false)
+  vars:
+    sysctl_params:
+      net.ipv4.ip_forward: 1
+      net.bridge.bridge-nf-call-iptables: 1
+      net.bridge.bridge-nf-call-ip6tables: 1
+
+- name: Install dependencies
+  apt:
+    name:
+      - curl
+      - ca-certificates
+      - gnupg
+      - lsb-release
+      - ufw
+    state: present
+    update_cache: true
+  when: sysctl_tuning | default(false)
+
+- name: Configure UFW defaults
+  ufw:
+    direction: "{{ item.dir }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { dir: incoming, policy: deny }
+    - { dir: outgoing, policy: allow }
+  when: sysctl_tuning | default(false)
+
+- name: Allow SSH
+  ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+  when: sysctl_tuning | default(false)
+
+- name: Enable UFW
+  ufw:
+    state: enabled
+    policy: deny
+  when: sysctl_tuning | default(false)
