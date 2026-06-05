@@ -40,6 +40,7 @@ variable "image_ocid" {
 variable "ssh_public_key" {
   description = "SSH public key for instance access"
   type        = string
+  sensitive   = true
 }
 
 variable "cloud_init_script" {

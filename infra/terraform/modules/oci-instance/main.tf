@@ -11,7 +11,7 @@ resource "oci_core_vcn" "this" {
   compartment_id = var.compartment_id
   display_name   = "${var.name_prefix}-vcn"
   cidr_block     = var.vcn_cidr
-  dns_label      = var.name_prefix
+  dns_label      = lower(replace(replace(var.name_prefix, "-", ""), "_", ""))
 }
 
 resource "oci_core_internet_gateway" "this" {
@@ -132,7 +132,7 @@ resource "oci_core_instance" "this" {
     subnet_id        = oci_core_subnet.public.id
     assign_public_ip = true
     display_name     = "${var.name_prefix}-vnics"
-    hostname_label   = var.name_prefix
+    hostname_label   = lower(replace(replace(var.name_prefix, "-", ""), "_", ""))
   }
 
   metadata = {
@@ -164,9 +164,10 @@ resource "oci_core_volume" "this" {
 resource "oci_core_volume_attachment" "this" {
   count = var.block_volume_size_gb > 0 ? 1 : 0
 
-  attachment_type = "iscsi"
+  attachment_type = "paravirtualized"
   instance_id     = oci_core_instance.this.id
   volume_id       = oci_core_volume.this[0].id
 
-  use_chap = true
+  is_read_only = false
+  is_shareable = false
 }

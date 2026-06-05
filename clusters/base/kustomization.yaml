@@ -10,6 +10,7 @@ resources:
   - network-policy-deny.yaml
   - network-policy-dns.yaml
 
-commonLabels:
-  app.kubernetes.io/managed-by: kustomize
-  app.kubernetes.io/part-of: k3s-multiarch-lab
+labels:
+  - pairs:
+      app.kubernetes.io/managed-by: kustomize
+      app.kubernetes.io/part-of: k3s-multiarch-lab

@@ -30,8 +30,8 @@ write_files:
       set -euo pipefail
 
       K3S_VERSION=${k3s_version}
-      K3S_TOKEN=***      K3S_URL=${k3s_server_url}
-      TAILSCALE_AUTH=${tail...h}
+      K3S_TOKEN=${k3s_token}      K3S_URL=${k3s_server_url}
+      TAILSCALE_AUTH=${tailscale_auth_key}
       NODE_HOSTNAME=${node_hostname}
       FLANNEL_IFACE=${flannel_iface}
 
@@ -45,6 +45,21 @@ write_files:
           --accept-routes \
           --accept-dns=false
         TS_IP=$(tailscale ip -4 2>/dev/null || echo "")
+        if [ -n "$TS_IP" ]; then
+          echo "Tailscale IP: $TS_IP"
+        else
+          echo "Waiting for Tailscale IP..."
+          for i in $(seq 1 30); do
+            TS_IP=$(tailscale ip -4 2>/dev/null || echo "")
+            [ -n "$TS_IP" ] && break
+            sleep 2
+          done
+          if [ -z "$TS_IP" ]; then
+            echo "ERROR: Tailscale failed to get an IP after 60s"
+            exit 1
+          fi
+          echo "Tailscale IP: $TS_IP"
+        fi
       fi
 
       # ── Step 2: Build K3s install args ──
@@ -63,7 +78,7 @@ write_files:
       curl -sfL https://get.k3s.io | \
         INSTALL_K3S_VERSION="$K3S_VERSION" \
         K3S_URL="$K3S_URL" \
-        K3S_TOKEN=*** \
+        K3S_TOKEN=${k3s_token} \
         INSTALL_K3S_EXEC="$K3S_ARGS" \
         sh -
     permissions: '0744'
