@@ -28,11 +28,9 @@
   when: sysctl_tuning | default(false)
 
 - name: Configure sysctl for Kubernetes
-  sysctl:
-    name: "{{ item.key }}"
-    value: "{{ item.value }}"
-    state: present
-    reload: true
+  command: "sysctl -w {{ item.key }}={{ item.value }}"
+  become: yes
+  changed_when: false
   loop: "{{ sysctl_params | dict2items }}"
   when: sysctl_tuning | default(false)
   vars:
