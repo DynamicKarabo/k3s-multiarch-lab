@@ -3,6 +3,13 @@
 
 terraform {
   required_version = ">= 1.5"
+
+  required_providers {
+    oci = {
+      source  = "oracle/oci"
+      version = ">= 6.0"
+    }
+  }
 }
 
 # ── Networking ──
@@ -141,6 +148,24 @@ resource "oci_core_instance" "this" {
   }
 
   preserve_boot_volume = false
+
+  agent_config {
+    are_all_plugins_disabled = false
+    is_management_disabled   = false
+    is_monitoring_disabled   = false
+    plugins_config {
+      name          = "Compute Instance Management"
+      desired_state = "DISABLED"
+    }
+    plugins_config {
+      name          = "Compute Instance Monitoring"
+      desired_state = "DISABLED"
+    }
+  }
+
+  launch_options {
+    is_pv_encryption_in_transit_enabled = true
+  }
 
   lifecycle {
     ignore_changes = [

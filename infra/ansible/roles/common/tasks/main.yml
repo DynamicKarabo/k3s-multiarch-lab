@@ -6,11 +6,10 @@
     name: "{{ inventory_hostname }}"
 
 - name: Disable swap (Kubernetes requirement)
-  mount:
-    name: swap
-    fstype: swap
-    state: absent
+  command: swapoff -a
+  become: yes
   when: sysctl_tuning | default(false)
+  changed_when: false
 
 - name: Disable swap in fstab
   replace:
