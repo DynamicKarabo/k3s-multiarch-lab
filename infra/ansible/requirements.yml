@@ -1,0 +1,4 @@
+# Required Ansible collections for k3s-multiarch-lab
+collections:
+  - ansible.posix  # sysctl, mount
+  - community.general  # modprobe, ufw, filesystem

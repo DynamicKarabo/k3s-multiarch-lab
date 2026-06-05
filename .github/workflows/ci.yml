@@ -57,6 +57,10 @@ jobs:
       - name: Install ansible-lint
         run: pip install ansible-lint yamllint
 
+      - name: Install Ansible collections
+        run: ansible-galaxy collection install -r requirements.yml
+        working-directory: infra/ansible
+
       - name: Ansible syntax check
         run: ansible-playbook site.yml --syntax-check
         working-directory: infra/ansible
