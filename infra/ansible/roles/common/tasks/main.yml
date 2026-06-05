@@ -19,9 +19,9 @@
   when: sysctl_tuning | default(false)
 
 - name: Load kernel modules
-  modprobe:
-    name: "{{ item }}"
-    state: present
+  command: modprobe {{ item }}
+  become: yes
+  changed_when: false
   loop:
     - overlay
     - br_netfilter
